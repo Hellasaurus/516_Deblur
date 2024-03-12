@@ -1,20 +1,58 @@
-import torch as pt
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
 import numpy as np
 import matplotlib
 
 from skimage import data
 
-# filter 
+# L_0 filter. I did not implement this. 
 from smoothing.src import L0_Smoothing
 
+## model params
+filter_count = 128 # 128 filters per layer
+
+filter_size = {
+    1: 9,
+    2: 1,
+    3: 3,
+    4: 5,
+    5: 1,
+    6: 3
+}
+train_lam = 0.005
+train_eps = 10e-6
+
+ker_eta = 0.002
+ker_gam = 1
+ker_tau = 15
+ker_bet = 0.001
+
+class Net(nn.Module):
+    def __init__(self):
+        super(Net, self).init()
+
+
+def re_lu(x):
+    '''rectified linear unit, used in equation 5 from source'''
+    return max( 0, x)
+
 def activate(x):
+    '''activation function, used in equation 4 from source'''
     return 2 * np.tanh(x)
 
-def feature_weighted_avg(y_grad):
+def compute_feature(_feature, _filter, _bias):
+    '''computes a single feature, equation 4 from source'''
+    output = sum([np.convolve(_feature[m], w) + _bias for m,w in enumerate(_filter)])
+    return re_lu(output)
+
+def feature_weighted_avg(_feature, _filter, _bias):
     '''
-    Equation 5, used for computing the loss function for first component of model
+    Equation 5, used for computing the loss function for first component of model.
+    Applied only to final layer of the model. 
     '''
-    return sum()
+    output = sum([np.convolve(_feature[m], w) + _bias for m,w in enumerate(_filter)])
+    return activate(output)
 
 def cost_a(y_grad, ):
     '''
@@ -24,7 +62,7 @@ def cost_a(y_grad, ):
 
 def cost_b():
     '''
-    Cost function for first stage of network
+    Cost function for second stage of network
     '''
     return
 
